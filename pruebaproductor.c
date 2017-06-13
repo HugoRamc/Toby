@@ -22,10 +22,10 @@
 #define MEM_PRODUCER4 8
 #define MEM_SPOOLER4 9
 
-
-
 int semid_llamadas;
 int shmid_llamadas;
+int semid_mensajes;
+int shmid_mensajes;
 
 struct{
     unsigned short int sem_num;
@@ -41,6 +41,7 @@ typedef struct{
 }Zona;
 
 Zona* mem_llamadas;
+Zona* mem_mensajes;
 
 union semun{
     int val;                /* value for SETVAL */
@@ -59,38 +60,40 @@ void init_semaphores(unsigned short int* sem_array,int semid){
 	}
 }
 
-void open(int sem_num){
+void open(int sem_num,int semid){
 	struct sembuf sem_open;
 	sem_open.sem_num = sem_num;
     sem_open.sem_op = 1;
     sem_open.sem_flg = SEM_UNDO; //Free resource of the semaphore
-    if (semop(semid_llamadas,&sem_open,1) == -1) {
+    if (semop(semid,&sem_open,1) == -1) {
         perror("semop");
         exit(1);
     }
 }
 
-void lock(int sem_num){
+void lock(int sem_num,int semid){
 	struct sembuf sem_lock;
 	sem_lock.sem_num = sem_num;
     sem_lock.sem_op = -1;  //Block the calling process until the value of the semaphore is greater than or equal to the absolute value of sem_op.
     sem_lock.sem_flg = SEM_UNDO;
 
-	if (semop(semid_llamadas,&sem_lock,1) == -1) {
+	if (semop(semid,&sem_lock,1) == -1) {
         perror("semop");
         exit(1);
     }
 }
 
-void linkmemory(Zona* memoria,int shmid){
+Zona* linkmemory(int shmid){
+	 Zona* memoria;
   //Se enlaza el arreglo de zonas a la memoria creada
-	  if((mem_llamadas = (Zona*)shmat(shmid,(Zona*) 0,SHM_EXEC)) == (void *)-1) { 
+	  if((memoria = (Zona*)shmat(shmid,(Zona*) 0,SHM_EXEC)) == (void *)-1) { 
 	      perror("shmat");
 	      exit(1);
 	  }
+	 return memoria;
 }
 
-void fillmemory(int idusuario,int iteration,int indexmem){
+void fillmemorycalls(int idusuario,int iteration,int indexmem){
 	if(idusuario == 0){
 			strcpy(mem_llamadas[indexmem].usuario,"$Pit");
 				switch(iteration){
@@ -139,70 +142,170 @@ void fillmemory(int idusuario,int iteration,int indexmem){
 	return;
 }
 
-void calls(int idusuario){
-	int j=0;
+void fillmemorymensages(int idusuario,int iteration,int indexmem){
+	if(idusuario == 0){
+			strcpy(mem_mensajes[indexmem].usuario,"$Pit");
+				switch(iteration){
+					case 0:	strcpy(mem_mensajes[indexmem].compania,"$Telcel");
+							strcpy(mem_mensajes[indexmem].operacion,"M$Telcel es la red");
+							break;
+					case 1:	strcpy(mem_mensajes[indexmem].compania,"$Movistar");
+							strcpy(mem_mensajes[indexmem].operacion,"M$Movistar unidos hacemos mas");
+							break;
+					default: strcpy(mem_mensajes[indexmem].compania,"$AT&T");
+							 strcpy(mem_mensajes[indexmem].operacion,"M$AT&T unidos por el mundo");
+							 break;
+				}
+			printf("Yo soy Pit, este es un mensaje\n");
+	}
+	else if(idusuario == 1){
+			strcpy(mem_mensajes[indexmem].usuario,"$Hugue");
+				switch(iteration){
+					case 0:	strcpy(mem_mensajes[indexmem].compania,"$Telcel");
+							strcpy(mem_mensajes[indexmem].operacion,"M$Telcel es la red");
+							break;
+					case 1:	strcpy(mem_mensajes[indexmem].compania,"$Movistar");
+							strcpy(mem_mensajes[indexmem].operacion,"M$Movistar unidos hacemos mas");
+							break;
+					default: strcpy(mem_mensajes[indexmem].compania,"$AT&T");
+							 strcpy(mem_mensajes[indexmem].operacion,"M$AT&T unidos por el mundo");
+							 break;
+				}
+			printf("Yo soy Hugue, esta es un mensaje\n");
+		}
+	else{
+			strcpy(mem_mensajes[indexmem].usuario,"$Alonso");
+				switch(iteration){
+					case 0:	strcpy(mem_mensajes[indexmem].compania,"$Telcel");
+							strcpy(mem_mensajes[indexmem].operacion,"M$Telcel es la red");
+							break;
+					case 1:	strcpy(mem_mensajes[indexmem].compania,"$Movistar");
+							strcpy(mem_mensajes[indexmem].operacion,"M$Movistar unidos hacemos mas");
+							break;
+					default: strcpy(mem_mensajes[indexmem].compania,"$AT&T");
+							 strcpy(mem_mensajes[indexmem].operacion,"M$AT&T unidos por el mundo");
+							 break;
+				}
+			printf("Yo soy Alonso, esta es un mensaje\n");
+		}
+	return;
+}
+
+void calls(int idusuario,int iteration){
 	int loop;
 	int sem_memvalue;
-	for(int i=0;i<10;i++){
-		j= i%3;
-		//Zonas Criticas
-			lock(MAIN_PRODUCER);
+	//Zonas Criticas
+			lock(MAIN_PRODUCER,semid_llamadas);
 				loop = 1;
 				do{
 					sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER1,GETVAL,NULL);
 					if(sem_memvalue!=0){
-						open(MAIN_PRODUCER);
+						open(MAIN_PRODUCER,semid_llamadas);
 						//Zona de memoria 1
-						lock(MEM_PRODUCER1);
-						fillmemory(idusuario,j,0);
-						open(MEM_SPOOLER1);
+						lock(MEM_PRODUCER1,semid_llamadas);
+						fillmemorycalls(idusuario,iteration,0);
+						open(MEM_SPOOLER1,semid_llamadas);
 						loop = 0;
 					}
 					else{
 						sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER2,GETVAL,NULL);
 						if(sem_memvalue!=0){
-							open(MAIN_PRODUCER);
+							open(MAIN_PRODUCER,semid_llamadas);
 							//Zona de memoria 2
-							lock(MEM_PRODUCER2);
-							fillmemory(idusuario,j,1);
-							open(MEM_SPOOLER2);
+							lock(MEM_PRODUCER2,semid_llamadas);
+							fillmemorycalls(idusuario,iteration,1);
+							open(MEM_SPOOLER2,semid_llamadas);
 							loop = 0;
 						}
 						else{
 							sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER3,GETVAL,NULL);
 							if(sem_memvalue!=0){
-								open(MAIN_PRODUCER);
+								open(MAIN_PRODUCER,semid_llamadas);
 								//Zona de memoria 3
-								lock(MEM_PRODUCER3);
-								fillmemory(idusuario,j,2);
-								open(MEM_SPOOLER3);
+								lock(MEM_PRODUCER3,semid_llamadas);
+								fillmemorycalls(idusuario,iteration,2);
+								open(MEM_SPOOLER3,semid_llamadas);
 								loop = 0;
 							}
 							else{
 								sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER4,GETVAL,NULL);
 								if(sem_memvalue!=0){
-									open(MAIN_PRODUCER);
+									open(MAIN_PRODUCER,semid_llamadas);
 									//Zona de memoria 4
-									lock(MEM_PRODUCER4);
-									fillmemory(idusuario,j,3);
-									open(MEM_SPOOLER4);
+									lock(MEM_PRODUCER4,semid_llamadas);
+									fillmemorycalls(idusuario,iteration,3);
+									open(MEM_SPOOLER4,semid_llamadas);
 									loop = 0;
 								}
 							}
 						}
 					}			
 				}while(loop);
-	}
-	return;
 }
 
+void mensages(int idusuario,int iteration){
+	int loop;
+	int sem_memvalue;
+	//Zonas Criticas
+			lock(MAIN_PRODUCER,semid_mensajes);
+				loop = 1;
+				do{
+					sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER1,GETVAL,NULL);
+					if(sem_memvalue!=0){
+						open(MAIN_PRODUCER,semid_mensajes);
+						//Zona de memoria 1
+						lock(MEM_PRODUCER1,semid_mensajes);
+						fillmemorymensages(idusuario,iteration,0);
+						open(MEM_SPOOLER1,semid_mensajes);
+						loop = 0;
+					}
+					else{
+						sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER2,GETVAL,NULL);
+						if(sem_memvalue!=0){
+							open(MAIN_PRODUCER,semid_mensajes);
+							//Zona de memoria 2
+							lock(MEM_PRODUCER2,semid_mensajes);
+							fillmemorymensages(idusuario,iteration,1);
+							open(MEM_SPOOLER2,semid_mensajes);
+							loop = 0;
+						}
+						else{
+							sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER3,GETVAL,NULL);
+							if(sem_memvalue!=0){
+								open(MAIN_PRODUCER,semid_mensajes);
+								//Zona de memoria 3
+								lock(MEM_PRODUCER3,semid_mensajes);
+								fillmemorymensages(idusuario,iteration,2);
+								open(MEM_SPOOLER3,semid_mensajes);
+								loop = 0;
+							}
+							else{
+								sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER4,GETVAL,NULL);
+								if(sem_memvalue!=0){
+									open(MAIN_PRODUCER,semid_mensajes);
+									//Zona de memoria 4
+									lock(MEM_PRODUCER4,semid_mensajes);
+									fillmemorymensages(idusuario,iteration,3);
+									open(MEM_SPOOLER4,semid_mensajes);
+									loop = 0;
+								}
+							}
+						}
+					}			
+				}while(loop);
+
+}
 
 void *createproductors(void *arg){
 	int idusuario = *((int*)arg);
-	calls(idusuario);
-	//mensajes(idusuario);
-}
+	int iteration=0;
 
+	for(int i=0;i<10;i++){
+		iteration= i%3;
+		calls(idusuario,iteration);
+		mensages(idusuario,iteration);
+	}
+}
 
 int main(int argc, char const *argv[]){
 	//Creacion de los semaforos  
@@ -210,9 +313,15 @@ int main(int argc, char const *argv[]){
 	key_t key_mensajes;
 
 	unsigned short int  sem_arrayllamadas[10] = {1,1,1,0,1,0,1,0,1,0};
+	unsigned short int  sem_arraymensajes[10] = {1,1,1,0,1,0,1,0,1,0};
 
 	//Creacion de una llave unica ligada al archvo especificado
 	if((key_llamadas = ftok("/bin/ls",'l')) == -1){
+		perror("Error al establecer la llave");
+		exit(1);
+	}
+
+	if((key_mensajes = ftok("/bin/dir",'m')) == -1){
 		perror("Error al establecer la llave");
 		exit(1);
 	}
@@ -234,6 +343,23 @@ int main(int argc, char const *argv[]){
 		init_semaphores(sem_arrayllamadas,semid_llamadas);
 	}
 
+	//Creamos un SET de 10 semaforos para los mensajes
+	if((semid_mensajes = semget(key_mensajes,10,0666 | IPC_CREAT | IPC_EXCL)) == -1){
+		if((semid_mensajes = semget(key_mensajes,10,0666))==-1){
+			perror("semget");	
+			exit(1);	
+		}
+		else{
+			printf("Productor: Me ligue exitosamente a los semaforos de los mensajes\n");
+
+		}
+	}
+	else{
+		//Inicializamos los semaforos
+		printf("Productor: Cree exitosamente los semaforos de los mensajes\n");
+		init_semaphores(sem_arraymensajes,semid_mensajes);
+	}
+
 
 	//Creacion de la memoria compartida para llamadas
 	  if((shmid_llamadas = shmget(key_llamadas,sizeof(Zona)*TAM_MEMORIA,IPC_CREAT|IPC_EXCL|0666)) == -1){
@@ -250,7 +376,23 @@ int main(int argc, char const *argv[]){
 	    printf("Productor: Cree exitosamente la memoria de las llamadas\n");
 	  }
 
-	  linkmemory(mem_llamadas,shmid_llamadas);
+	 //Creacion de la memoria compartida para mensajes
+	  if((shmid_mensajes = shmget(key_mensajes,sizeof(Zona)*TAM_MEMORIA,IPC_CREAT|IPC_EXCL|0666)) == -1){
+	      /* El segmento ya existe - abrimos como consumidor*/
+	      if((shmid_mensajes = shmget(key_mensajes,sizeof(Zona)*TAM_MEMORIA,0)) == -1){
+		       perror("shmget");
+		       exit(1);
+	      }
+	      else{
+	        printf("Productor: Me ligue exitosamente a la memoria de los mensajes\n");
+	      }
+	  }
+	  else{
+	    printf("Productor: Cree exitosamente la memoria de los mensajes\n");
+	  }
+
+	  mem_llamadas = linkmemory(shmid_llamadas);
+	  mem_mensajes = linkmemory(shmid_mensajes);
 
 	//Creacion de los hilos productores (Pit y Hugue)
 	pthread_t productores[3];
