@@ -26,6 +26,7 @@ int semid_llamadas;
 int shmid_llamadas;
 int semid_mensajes;
 int shmid_mensajes;
+int semid_server;
 
 struct{
     unsigned short int sem_num;
@@ -60,6 +61,20 @@ void init_semaphores(unsigned short int* sem_array,int semid){
 	}
 }
 
+void destroymemory(int shmid,Zona* buffer){
+  //Terminada de usar la memoria compartida se libera
+  if(shmid != 0 || shmid != -1){ //si la memoria ya fue destruida solo se des asocia de ella
+    shmdt (buffer);//des asocia la memoria compartida de la zona de datos de nuestro programa
+    shmctl (shmid, IPC_RMID, (struct shmid_ds *)NULL);//destruye la zona de memoria compartida
+    //printf("\nLa memoria compartida ha sido destruida OUT\n");
+    printf("Destruyo la memoria\n");
+  }
+  else{
+    shmdt(buffer);//desasocia la memoria compartida de la zona de datos de nuestro programa
+    printf("Se Desligo de la memoria\n");
+  }
+}
+
 void open(int sem_num,int semid){
 	struct sembuf sem_open;
 	sem_open.sem_num = sem_num;
@@ -91,6 +106,15 @@ Zona* linkmemory(int shmid){
 	      exit(1);
 	  }
 	 return memoria;
+}
+
+void remove_semaphores(int semid){
+	union semun semopts;
+	if (semctl(semid,0,IPC_RMID,semopts) == -1) {
+        perror("semctl");
+        exit(1);
+    }
+    printf("Destruyo semaforos\n");
 }
 
 void fillmemorycalls(int idusuario,int iteration,int indexmem){
@@ -200,9 +224,9 @@ void calls(int idusuario,int iteration){
 				do{
 					sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER1,GETVAL,NULL);
 					if(sem_memvalue!=0){
-						open(MAIN_PRODUCER,semid_llamadas);
 						//Zona de memoria 1
 						lock(MEM_PRODUCER1,semid_llamadas);
+						open(MAIN_PRODUCER,semid_llamadas);
 						fillmemorycalls(idusuario,iteration,0);
 						open(MEM_SPOOLER1,semid_llamadas);
 						loop = 0;
@@ -210,9 +234,9 @@ void calls(int idusuario,int iteration){
 					else{
 						sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER2,GETVAL,NULL);
 						if(sem_memvalue!=0){
-							open(MAIN_PRODUCER,semid_llamadas);
 							//Zona de memoria 2
 							lock(MEM_PRODUCER2,semid_llamadas);
+							open(MAIN_PRODUCER,semid_llamadas);
 							fillmemorycalls(idusuario,iteration,1);
 							open(MEM_SPOOLER2,semid_llamadas);
 							loop = 0;
@@ -220,9 +244,9 @@ void calls(int idusuario,int iteration){
 						else{
 							sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER3,GETVAL,NULL);
 							if(sem_memvalue!=0){
-								open(MAIN_PRODUCER,semid_llamadas);
 								//Zona de memoria 3
 								lock(MEM_PRODUCER3,semid_llamadas);
+								open(MAIN_PRODUCER,semid_llamadas);
 								fillmemorycalls(idusuario,iteration,2);
 								open(MEM_SPOOLER3,semid_llamadas);
 								loop = 0;
@@ -230,9 +254,9 @@ void calls(int idusuario,int iteration){
 							else{
 								sem_memvalue = semctl(semid_llamadas,MEM_PRODUCER4,GETVAL,NULL);
 								if(sem_memvalue!=0){
-									open(MAIN_PRODUCER,semid_llamadas);
 									//Zona de memoria 4
 									lock(MEM_PRODUCER4,semid_llamadas);
+									open(MAIN_PRODUCER,semid_llamadas);
 									fillmemorycalls(idusuario,iteration,3);
 									open(MEM_SPOOLER4,semid_llamadas);
 									loop = 0;
@@ -252,9 +276,9 @@ void mensages(int idusuario,int iteration){
 				do{
 					sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER1,GETVAL,NULL);
 					if(sem_memvalue!=0){
-						open(MAIN_PRODUCER,semid_mensajes);
 						//Zona de memoria 1
 						lock(MEM_PRODUCER1,semid_mensajes);
+						open(MAIN_PRODUCER,semid_mensajes);
 						fillmemorymensages(idusuario,iteration,0);
 						open(MEM_SPOOLER1,semid_mensajes);
 						loop = 0;
@@ -262,9 +286,9 @@ void mensages(int idusuario,int iteration){
 					else{
 						sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER2,GETVAL,NULL);
 						if(sem_memvalue!=0){
-							open(MAIN_PRODUCER,semid_mensajes);
 							//Zona de memoria 2
 							lock(MEM_PRODUCER2,semid_mensajes);
+							open(MAIN_PRODUCER,semid_mensajes);
 							fillmemorymensages(idusuario,iteration,1);
 							open(MEM_SPOOLER2,semid_mensajes);
 							loop = 0;
@@ -272,9 +296,9 @@ void mensages(int idusuario,int iteration){
 						else{
 							sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER3,GETVAL,NULL);
 							if(sem_memvalue!=0){
-								open(MAIN_PRODUCER,semid_mensajes);
 								//Zona de memoria 3
 								lock(MEM_PRODUCER3,semid_mensajes);
+								open(MAIN_PRODUCER,semid_mensajes);
 								fillmemorymensages(idusuario,iteration,2);
 								open(MEM_SPOOLER3,semid_mensajes);
 								loop = 0;
@@ -282,9 +306,9 @@ void mensages(int idusuario,int iteration){
 							else{
 								sem_memvalue = semctl(semid_mensajes,MEM_PRODUCER4,GETVAL,NULL);
 								if(sem_memvalue!=0){
-									open(MAIN_PRODUCER,semid_mensajes);
 									//Zona de memoria 4
 									lock(MEM_PRODUCER4,semid_mensajes);
+									open(MAIN_PRODUCER,semid_mensajes);
 									fillmemorymensages(idusuario,iteration,3);
 									open(MEM_SPOOLER4,semid_mensajes);
 									loop = 0;
@@ -293,7 +317,6 @@ void mensages(int idusuario,int iteration){
 						}
 					}			
 				}while(loop);
-
 }
 
 void *createproductors(void *arg){
@@ -311,9 +334,11 @@ int main(int argc, char const *argv[]){
 	//Creacion de los semaforos  
 	key_t key_llamadas;
 	key_t key_mensajes;
+	key_t key_server;
 
 	unsigned short int  sem_arrayllamadas[10] = {1,1,1,0,1,0,1,0,1,0};
 	unsigned short int  sem_arraymensajes[10] = {1,1,1,0,1,0,1,0,1,0};
+	unsigned short int  sem_arrayserver[1] = {1};
 
 	//Creacion de una llave unica ligada al archvo especificado
 	if((key_llamadas = ftok("/bin/ls",'l')) == -1){
@@ -326,12 +351,17 @@ int main(int argc, char const *argv[]){
 		exit(1);
 	}
 
+	if((key_server = ftok("/bin/pwd",'s')) == -1){
+		perror("Error al establecer la llave");
+		exit(1);
+	}
+
 	//Creamos un SET de 10 semaforos para las llamadas
 	if((semid_llamadas = semget(key_llamadas,10,0666 | IPC_CREAT | IPC_EXCL)) == -1){
 		if((semid_llamadas = semget(key_llamadas,10,0666))==-1){
 			perror("semget");	
 			exit(1);	
-		}
+		}	
 		else{
 			printf("Productor: Me ligue exitosamente a los semaforos de las llamadas\n");
 
@@ -358,6 +388,23 @@ int main(int argc, char const *argv[]){
 		//Inicializamos los semaforos
 		printf("Productor: Cree exitosamente los semaforos de los mensajes\n");
 		init_semaphores(sem_arraymensajes,semid_mensajes);
+	}
+
+	//Creamos un SET de 1 semaforo para el server
+	if((semid_server = semget(key_server,1,0666 | IPC_CREAT | IPC_EXCL)) == -1){
+		if((semid_server = semget(key_server,1,0666))==-1){
+			perror("semget");	
+			exit(1);	
+		}
+		else{
+			printf("Productor: Me ligue exitosamente a los semaforos de los mensajes\n");
+
+		}
+	}
+	else{
+		//Inicializamos los semaforos
+		printf("Productor: Cree exitosamente los semaforos de los mensajes\n");
+		init_semaphores(sem_arrayserver,semid_server);
 	}
 
 
@@ -394,7 +441,8 @@ int main(int argc, char const *argv[]){
 	  mem_llamadas = linkmemory(shmid_llamadas);
 	  mem_mensajes = linkmemory(shmid_mensajes);
 
-	//Creacion de los hilos productores (Pit y Hugue)
+	
+	//Creacion de los hilos productores (Pit,Hugue y Alonso)
 	pthread_t productores[3];
 	int param[3];
 
@@ -413,5 +461,8 @@ int main(int argc, char const *argv[]){
 		}
 	}
 
+	printf("Termine, oprime enter\n");
+    getchar();
+    
 	return 0;
 }

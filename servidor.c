@@ -15,6 +15,8 @@
 #define READ_TO_BUFFER 0
 
 int semid_archivos;
+int *sock_client;
+pthread_t *id_hilo;
 
 struct{
     unsigned short int sem_num;
@@ -62,230 +64,148 @@ void lock(int sem_num){
     }
 }
 
-
-/*
-FILE *Hugue_llamadas;
-FILE *Hugue_mensajes;
-FILE *Pit_llamadas;
-FILE *Pit_mensajes;
-FILE *Alonso_llamadas;
-FILE *Alonso_mensajes;
-*/
-
-FILE *llamadas;
-FILE *mensajes;
-
-//void createfiles();
-
 void *acepta_conexion(void *arg){
-	int *canal_id=(int *)arg;
-	unsigned char buffermensaje[30];
+	/*Inicializacion de varibales*/
+  	int *canal_id = (int *)arg;
+  	int index;
+	int tamrecv;
+	int i,j,k,w;
+	i=j=k=w=0;
+	char nombre[7];
 	unsigned char bufferdata[191];
+	unsigned char buffermensaje[31];
 	unsigned char *arraydata[4];
 	unsigned char *p;
-	int index;
-	int tamrecv;
-	
-	strcpy(buffermensaje,"Conexion establecida...");
-	if(send(*canal_id,(void*)buffermensaje,strlen(buffermensaje),WRITE_TO_BUFFER)==-1){
-		perror("No se pudo enviar el mensaje");
-		exit(1);
-	}
-	strcpy(buffermensaje,"Mensaje recibido...");
 
-	while(1){
-		if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
+	free(sock_client);
+	printf("Conexión establecida\n");
+	strcpy(buffermensaje,"Mensaje recibido y procesado");
+
+	do{
+		if((tamrecv = recv(*canal_id,(void*)nombre,sizeof(nombre),READ_TO_BUFFER))==-1){
 			perror("No se recibio el mensaje");
 			exit(1);
 		}
 
-		if(tamrecv == 0){
-			break;
+		if(strncmp(nombre,"one",3)==0){
+			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
+			perror("No se recibio el mensaje");
+			exit(1);
+			}
+
+			bufferdata[tamrecv]='\0';
+			printf("Cliente: %s\n",bufferdata);
+
+			i++;
 		}
 
-		p = strtok(bufferdata,"$");
+		if(strncmp(nombre,"two",3)==0){
+			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
+			perror("No se recibio el mensaje");
+			exit(1);
+			}
 
+			bufferdata[tamrecv]='\0';
+			printf("Cliente: %s\n",bufferdata);
+
+			j++;
+		}
+
+		if(strncmp(nombre,"three",5)==0){
+			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
+			perror("No se recibio el mensaje");
+			exit(1);
+			}
+
+			bufferdata[tamrecv]='\0';
+			printf("Cliente: %s\n",bufferdata);
+
+			k++;
+		}
+
+		if(strncmp(nombre,"four",4)==0){
+			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
+			perror("No se recibio el mensaje");
+			exit(1);
+			}
+
+			bufferdata[tamrecv]='\0';
+			printf("Cliente: %s\n",bufferdata);
+
+			w++;
+		}
+
+		
+		/*
+		p = strtok(bufferdata,"$");
 		index=0;
 		while(p != NULL){
 			arraydata[index++] = p;
 			p = strtok(NULL,"$");
 		}
-
-
-		lock(0);
-			if(strcmp(arraydata[0],"M")==0){
-				if((mensajes = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registromensajes.txt","a")) == NULL){
-				    perror("fopen\n");
-				    exit(1);
-				}
-				printf("Cliente: %s\n",bufferdata);
-				fputs("Usuario: ",mensajes);
-				fputs(arraydata[3],mensajes);
-				fputs("\tCompania: ",mensajes);
-				fputs(arraydata[2],mensajes);
-				fputs("\tOperacion: ",mensajes);
-				fputs(arraydata[1],mensajes);
-				fputs("\n",mensajes);
-				fclose(mensajes);
-			}
-			else if(strcmp(arraydata[0],"L")==0){
-				if((llamadas = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registrollamadas.txt","a")) == NULL){
-				    perror("fopen\n");
-				    exit(1);
-				}
-				printf("Cliente: %s\n",bufferdata);
-				fputs("Usuario: ",llamadas);
-				fputs(arraydata[3],llamadas);
-				fputs("\tCompania: ",llamadas);
-				fputs(arraydata[2],llamadas);
-				fputs("\tOperacion: ",llamadas);
-				fputs(arraydata[1],llamadas);
-				fputs("\n",llamadas);
-				fclose(llamadas);
-			}
-			else{
-				printf("Error en la información\n");
-			}						
-		open(0);
+		*/
 
 		if(send(*canal_id,(void*)buffermensaje,strlen(buffermensaje),WRITE_TO_BUFFER)==-1){
 			perror("No se pudo enviar el mensaje");
 			exit(1);
 		}
 
-		printf("Se recibio el mensaje\n");
-	}		
+		printf("Información procesada\n");
+	}while(i<15 || j<15 || k<15 || w<15);
 
-	close(*canal_id);
-	free(canal_id);
-	printf("Conexión Finalizada\n");
+	if(send(*canal_id,(void*)buffermensaje,strlen(buffermensaje),WRITE_TO_BUFFER)==-1){
+			perror("No se pudo enviar el mensaje");
+			exit(1);
+	}
+
+	strcpy(buffermensaje,"Fin de la conexión");
+	printf("Fin de la conexión\n");
 }
 
 int main(int argc, char const *argv[]){
-	int puerto = atoi (argv[1]);
-	int sock_id;
-	int *canal_id;
-	int tam;
-	struct sockaddr_in servidor,cliente;
-	pthread_t *id_hilo;
-	key_t key_archivos;
-
-	unsigned short int sem_arrayarchivos[6] = {1,1,1,1,1,1};
-
-	//Creacion de una llave unica ligada al archvo especificado
-	if((key_archivos = ftok("/bin/bash",'a')) == -1){
-		perror("Error al establecer la llave");
-		exit(1);
-	}
-
-	//Creamos un SET de 10 semaforos para las llamadas
-	if((semid_archivos = semget(key_archivos,6,0666 | IPC_CREAT | IPC_EXCL)) == -1){
-		if((semid_archivos = semget(key_archivos,6,0666))==-1){
-			perror("semget");	
-			exit(1);	
-		}
-		else{
-			printf("Servidor: Me ligue exitosamente a los semaforos de los archivos\n");
-		}
+	if(argc <2){
+		printf("Faltan parametros...\n");
 	}
 	else{
-		//Inicializamos los semaforos
-		printf("Servidor: Cree exitosamente los semaforos de los archivos\n");
-		init_semaphores(sem_arrayarchivos,semid_archivos);
-	}
+		int puerto = atoi (argv[1]);
+		int sock_id;
+		int tam;
+		int avilable = 1;
+		struct sockaddr_in servidor,cliente;
 
-
-
-	if((sock_id = socket(AF_INET,SOCK_STREAM,SINGLE_PROTOCOL))==-1){
-		perror("El socket no se pudo construir\n");
-		exit(1);
-	}
-
-	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(puerto);
-	servidor.sin_addr.s_addr = INADDR_ANY;
-
-	if(bind(sock_id,(struct sockaddr*)&servidor,sizeof(servidor)) == -1){
-		perror("Error al publicar el servicio\n");
-		exit(1);
-	}
-
-	if(listen(sock_id,4)==-1){
-		perror("No se pudo establecer la escucha\n");
-		exit(1);
-	}
-
-	//createfiles();
-	if((llamadas = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registrollamadas.txt","w")) == NULL){
-		perror("fopen\n");
-		exit(1);
-	}
-	fclose(llamadas);
-
-
-	if((mensajes = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registromensajes.txt","w")) == NULL){
-		perror("fopen\n");
-		exit(1);
-	}
-	fclose(mensajes);
-
-	while(1){
-		id_hilo= (pthread_t *)malloc(sizeof(pthread_t));
-		canal_id=(int *)malloc(sizeof(int));
-		tam = sizeof(cliente);
-		if((*canal_id=accept(sock_id,(struct sockaddr*)&cliente,&tam))==-1){
-			perror("No se pudo establecer la conexión con el cliente\n");
+		if((sock_id = socket(AF_INET,SOCK_STREAM,SINGLE_PROTOCOL))==-1){
+			perror("El socket no se pudo construir\n");
 			exit(1);
 		}
-		pthread_create(id_hilo,NULL,acepta_conexion,(void *)canal_id);
-		free(id_hilo);
-	}
 
+		servidor.sin_family = AF_INET;
+		servidor.sin_port = htons(puerto);
+		servidor.sin_addr.s_addr = INADDR_ANY;
+		setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, &avilable, sizeof(int));
+
+		if(bind(sock_id,(struct sockaddr*)&servidor,sizeof(servidor)) == -1){
+			perror("Error al publicar el servicio\n");
+			exit(1);
+		}
+
+		if(listen(sock_id,4)==-1){
+			perror("No se pudo establecer la escucha\n");
+			exit(1);
+		}
+
+		while(1){
+			setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, &avilable, sizeof(int));
+			id_hilo = (pthread_t *)malloc(sizeof(pthread_t));
+			sock_client = (int *)malloc(sizeof(int));
+			tam = sizeof(cliente);
+			if((*sock_client=accept(sock_id,(struct sockaddr*)&cliente,&tam))==-1){
+				perror("No se pudo establecer la conexión con el cliente\n");
+				exit(1);
+			}
+			pthread_create(id_hilo,NULL,acepta_conexion,(void *)sock_client);
+			free(id_hilo);
+		}
+		close(sock_id);
+	}
 	return 0;
 }
-
-/*
-void createfiles(){
-	if((Hugue_llamadas = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registrollamHugue.txt","w")) == NULL){
-    	perror("fopen\n");
-    	exit(1);
-    }
-
-    fclose(Hugue_llamadas);
-
-    if((Hugue_mensajes = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registromensjHugue.txt","w")) == NULL){
-    	perror("fopen\n");
-    	exit(1);
-    }
-
-    fclose(Hugue_mensajes);
-
-    if((Pit_llamadas = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registrollamPit.txt","w")) == NULL){
-    	perror("fopen\n");
-    	exit(1);
-    }
-
-    fclose(Pit_llamadas);
-
-    if((Pit_mensajes = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registromensjPit.txt","w")) == NULL){
-    	perror("fopen\n");
-    	exit(1);
-    }
-
-    fclose(Pit_mensajes);
-
-    if((Alonso_llamadas = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registrollamAlonso.txt","w")) == NULL){
-    	perror("fopen\n");
-    	exit(1);
-    }
-
-    fclose(Alonso_llamadas);
-
-    if((Alonso_mensajes = fopen("/home/ESCOM/Documents/Sistemas Operativos/Proyecto Final/registromensjAlonso.txt","w")) == NULL){
-    	perror("fopen\n");
-    	exit(1);
-    }
-
-    fclose(Alonso_mensajes);
-}
-*/

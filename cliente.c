@@ -53,7 +53,7 @@ void *enviar(void* arg){
 	buffermensaje[tamrecv]='\0';
 	printf("Servidor: %s\n",buffermensaje);
 
-	for(int i=0;i<10;i++){
+	for(int i=0;i<60;i++){
 		switch(idconsumidor){
 		case 0:		
 				strcpy(memoria.operacion,"M$AT&T unidos por el mundo");
@@ -96,13 +96,13 @@ void *enviar(void* arg){
 		printf("Servidor: %s\n",buffermensaje);
 
 	}
-	printf("Conexión Finalizada");
+	printf("Conexión Finalizada\n");
 	close (sock_id);			
 }
 
 int main(int argc, char const *argv[]){
-	puerto = atoi (argv[1]);
-	ip = argv[2];
+	puerto = 2000;
+	ip = "127.0.0.1";
 	pthread_t consumidores[4];
 	int parametros[4];
 
