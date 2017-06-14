@@ -82,68 +82,22 @@ void *acepta_conexion(void *arg){
 	strcpy(buffermensaje,"Mensaje recibido y procesado");
 
 	do{
-		if((tamrecv = recv(*canal_id,(void*)nombre,sizeof(nombre),READ_TO_BUFFER))==-1){
-			perror("No se recibio el mensaje");
-			exit(1);
-		}
-
-		if(strncmp(nombre,"one",3)==0){
-			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
-			perror("No se recibio el mensaje");
-			exit(1);
-			}
-
-			bufferdata[tamrecv]='\0';
-			printf("Cliente: %s\n",bufferdata);
-
-			i++;
-		}
-
-		if(strncmp(nombre,"two",3)==0){
-			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
-			perror("No se recibio el mensaje");
-			exit(1);
-			}
-
-			bufferdata[tamrecv]='\0';
-			printf("Cliente: %s\n",bufferdata);
-
-			j++;
-		}
-
-		if(strncmp(nombre,"three",5)==0){
-			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
-			perror("No se recibio el mensaje");
-			exit(1);
-			}
-
-			bufferdata[tamrecv]='\0';
-			printf("Cliente: %s\n",bufferdata);
-
-			k++;
-		}
-
-		if(strncmp(nombre,"four",4)==0){
-			if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
-			perror("No se recibio el mensaje");
-			exit(1);
-			}
-
-			bufferdata[tamrecv]='\0';
-			printf("Cliente: %s\n",bufferdata);
-
-			w++;
-		}
-
 		
-		/*
+		if((tamrecv = recv(*canal_id,(void*)bufferdata,sizeof(bufferdata),READ_TO_BUFFER))==-1){
+			perror("No se recibio el mensaje");
+			exit(1);
+		}
+
+		bufferdata[tamrecv]='\0';
+		printf("Cliente: %s\n",bufferdata);
+
+			
 		p = strtok(bufferdata,"$");
 		index=0;
 		while(p != NULL){
 			arraydata[index++] = p;
 			p = strtok(NULL,"$");
 		}
-		*/
 
 		if(send(*canal_id,(void*)buffermensaje,strlen(buffermensaje),WRITE_TO_BUFFER)==-1){
 			perror("No se pudo enviar el mensaje");
@@ -151,14 +105,9 @@ void *acepta_conexion(void *arg){
 		}
 
 		printf("Información procesada\n");
-	}while(i<15 || j<15 || k<15 || w<15);
+		i++;
+	}while(i<60);
 
-	if(send(*canal_id,(void*)buffermensaje,strlen(buffermensaje),WRITE_TO_BUFFER)==-1){
-			perror("No se pudo enviar el mensaje");
-			exit(1);
-	}
-
-	strcpy(buffermensaje,"Fin de la conexión");
 	printf("Fin de la conexión\n");
 }
 

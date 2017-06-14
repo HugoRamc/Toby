@@ -136,34 +136,6 @@ void senddata(char* bufferdata,int idconsumidor){
 	int tamrecv;
 
 	lock(SOCKET_CTL,semid_server);
-		if(idconsumidor==0){
-			if(send(sock_id,"one",3,WRITE_TO_BUFFER)==-1){
-				perror("No se pudo enviar el mensaje");
-				exit(1);
-			}
-			printf("El hilo 0 de llamadas envia al socket...\n");
-		}
-		else if(idconsumidor==1){
-			if(send(sock_id,"two",3,WRITE_TO_BUFFER)==-1){
-				perror("No se pudo enviar el mensaje");
-				exit(1);
-			}
-			printf("El hilo 1 de llamadas envia al socket...\n");
-		}
-		else if(idconsumidor==2){
-			if(send(sock_id,"three",5,WRITE_TO_BUFFER)==-1){
-				perror("No se pudo enviar el mensaje");
-				exit(1);
-			}
-			printf("El hilo 2 de mensajes envia al socket...\n");
-		}
-		else{
-			if(send(sock_id,"four",4,WRITE_TO_BUFFER)==-1){
-				perror("No se pudo enviar el mensaje");
-				exit(1);
-			}
-			printf("El hilo 3 de mensajes envia al socket...\n");
-		}
 		//Envia la cadena por el buffer
 		if(send(sock_id,(void*)bufferdata,strlen(bufferdata),WRITE_TO_BUFFER)==-1){
 				perror("No se pudo enviar el mensaje");
