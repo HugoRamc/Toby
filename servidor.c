@@ -16,7 +16,15 @@
 
 int semid_archivos;
 int *sock_client;
+int iteraciones;
 pthread_t *id_hilo;
+
+FILE* Pitcalls;
+FILE* Huguecalls;
+FILE* Alonsocalls;
+FILE* Pitmsgs;
+FILE* Huguemsgs;
+FILE* Alonsomsgs;
 
 struct{
     unsigned short int sem_num;
@@ -64,15 +72,59 @@ void lock(int sem_num){
     }
 }
 
+void createfiles(){
+	if((Pitcalls = fopen("Pitcalls.txt","w")) == NULL){
+		perror("Error al crear el archivo");
+		exit(1);
+	}
+
+	fclose(Pitcalls);
+
+	if((Huguecalls = fopen("Huguecalls.txt","w")) == NULL){
+		perror("Error al crear el archivo");
+		exit(1);
+	}
+
+	fclose(Huguecalls);
+
+	if((Alonsocalls = fopen("Alonsocalls.txt","w")) == NULL){
+		perror("Error al crear el archivo");
+		exit(1);
+	}
+
+	fclose(Alonsocalls);
+
+	if((Pitmsgs = fopen("Pitmsgs.txt","w")) == NULL){
+		perror("Error al crear el archivo");
+		exit(1);
+	}
+
+	fclose(Pitmsgs);
+
+	if((Huguemsgs = fopen("Huguemsgs.txt","w")) == NULL){
+		perror("Error al crear el archivo");
+		exit(1);
+	}
+
+	fclose(Huguemsgs);
+
+	if((Alonsomsgs = fopen("Alonsomsgs.txt","w")) == NULL){
+		perror("Error al crear el archivo");
+		exit(1);
+	}
+
+	fclose(Alonsomsgs);
+}
+
 void *acepta_conexion(void *arg){
 	/*Inicializacion de varibales*/
   	int *canal_id = (int *)arg;
   	int index;
+  	int i=0;
 	int tamrecv;
-	int i,j,k,w;
-	i=j=k=w=0;
 	char nombre[7];
 	unsigned char bufferdata[191];
+	unsigned char datoarchivo[200];
 	unsigned char buffermensaje[31];
 	unsigned char *arraydata[4];
 	unsigned char *p;
@@ -99,6 +151,102 @@ void *acepta_conexion(void *arg){
 			p = strtok(NULL,"$");
 		}
 
+		if(strcmp(arraydata[0],"M") == 0){
+			if(strcmp(arraydata[3],"Pit") == 0){
+				if((Pitmsgs = fopen("Pitmsgs.txt","a")) == NULL){
+					perror("Error al crear el archivo");
+					exit(1);
+				}
+
+				strcpy(datoarchivo,"Compania: ");
+				strcat(datoarchivo,arraydata[2]);
+				strcat(datoarchivo,"	Mensaje: ");
+				strcat(datoarchivo,arraydata[1]);
+				strcat(datoarchivo,"\n");
+
+				fwrite(datoarchivo,sizeof(char),strlen(datoarchivo),Pitmsgs);
+				fclose(Pitmsgs);
+			}
+			else if(strcmp(arraydata[3],"Hugue") == 0){
+				if((Huguemsgs = fopen("Huguemsgs.txt","a")) == NULL){
+					perror("Error al crear el archivo");
+					exit(1);
+				}
+
+				strcpy(datoarchivo,"Compania: ");
+				strcat(datoarchivo,arraydata[2]);
+				strcat(datoarchivo,"	Mensaje: ");
+				strcat(datoarchivo,arraydata[1]);
+				strcat(datoarchivo,"\n");
+
+				fwrite(datoarchivo,sizeof(char),strlen(datoarchivo),Huguemsgs);
+				fclose(Huguemsgs);
+			}
+			else{
+				if((Alonsomsgs = fopen("Alonsomsgs.txt","a")) == NULL){
+					perror("Error al crear el archivo");
+					exit(1);
+				}
+
+				strcpy(datoarchivo,"Compania: ");
+				strcat(datoarchivo,arraydata[2]);
+				strcat(datoarchivo,"	Mensaje: ");
+				strcat(datoarchivo,arraydata[1]);
+				strcat(datoarchivo,"\n");
+
+				fwrite(datoarchivo,sizeof(char),strlen(datoarchivo),Alonsomsgs);
+				fclose(Alonsomsgs);
+			}
+		}
+		else{
+			if(strcmp(arraydata[3],"Pit") ==0 ){
+				if((Pitcalls = fopen("Pitcalls.txt","a")) == NULL){
+					perror("Error al crear el archivo");
+					exit(1);
+				}
+
+				strcpy(datoarchivo,"Compania: ");
+				strcat(datoarchivo,arraydata[2]);
+				strcat(datoarchivo,"	Numero: ");
+				strcat(datoarchivo,arraydata[1]);
+				strcat(datoarchivo,"\n");
+
+				fwrite(datoarchivo,sizeof(char),strlen(datoarchivo),Pitcalls);
+				fclose(Pitcalls);
+				
+			}
+			else if(strcmp(arraydata[3],"Hugue") == 0){
+				if((Huguecalls = fopen("Huguecalls.txt","a")) == NULL){
+					perror("Error al crear el archivo");
+					exit(1);
+				}
+
+				strcpy(datoarchivo,"Compania: ");
+				strcat(datoarchivo,arraydata[2]);
+				strcat(datoarchivo,"	Numero: ");
+				strcat(datoarchivo,arraydata[1]);
+				strcat(datoarchivo,"\n");
+
+				fwrite(datoarchivo,sizeof(char),strlen(datoarchivo),Huguecalls);
+				fclose(Huguecalls);
+			}
+			else{
+				if((Alonsocalls = fopen("Alonsocalls.txt","a")) == NULL){
+					perror("Error al crear el archivo");
+					exit(1);
+				}
+
+				strcpy(datoarchivo,"Compania: ");
+				strcat(datoarchivo,arraydata[2]);
+				strcat(datoarchivo,"	Numero: ");
+				strcat(datoarchivo,arraydata[1]);
+				strcat(datoarchivo,"\n");
+
+				fwrite(datoarchivo,sizeof(char),strlen(datoarchivo),Alonsocalls);
+				fclose(Alonsocalls);
+			}
+		}
+
 		if(send(*canal_id,(void*)buffermensaje,strlen(buffermensaje),WRITE_TO_BUFFER)==-1){
 			perror("No se pudo enviar el mensaje");
 			exit(1);
@@ -106,7 +254,7 @@ void *acepta_conexion(void *arg){
 
 		printf("Información procesada\n");
 		i++;
-	}while(i<60);
+	}while(i<(600*iteraciones));
 
 	printf("Fin de la conexión\n");
 }
@@ -117,10 +265,13 @@ int main(int argc, char const *argv[]){
 	}
 	else{
 		int puerto = atoi (argv[1]);
+		iteraciones = atoi(argv[2]);
 		int sock_id;
 		int tam;
 		int avilable = 1;
 		struct sockaddr_in servidor,cliente;
+
+		createfiles();
 
 		if((sock_id = socket(AF_INET,SOCK_STREAM,SINGLE_PROTOCOL))==-1){
 			perror("El socket no se pudo construir\n");
