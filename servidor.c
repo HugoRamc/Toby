@@ -14,6 +14,7 @@
 #define WRITE_TO_BUFFER 0
 #define READ_TO_BUFFER 0
 
+
 int semid_archivos;
 int *sock_client;
 int iteraciones;
@@ -307,5 +308,6 @@ int main(int argc, char const *argv[]){
 		}
 		close(sock_id);
 	}
+
 	return 0;
 }
